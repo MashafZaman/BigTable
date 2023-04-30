@@ -75,15 +75,15 @@ const getRowGreeting = row => {
     console.log('Write some rows to the table');
     const dataset = [
       {
-        'ts': 1.5945120943859746E9, 
+        'ts': '1.5945120943859746E9', 
         'device': 'b8:27:eb:bf:9d:51', 
-        'co': 0.004955938648391245,
-        'humidity': 51.0,
+        'co': '0.004955938648391245',
+        'humidity': '51.0',
         'light': "false",
-        'lpg': 0.00765082227055719,
+        'lpg': '0.00765082227055719',
         'motion': "false",
-        'smoke': 0.02041127012241292,
-        'temp': 22.7, 
+        'smoke': '0.02041127012241292',
+        'temp': '22.7', 
       },
     ];
     const rowsToInsert = dataset.map((data, index) => ({
@@ -126,9 +126,30 @@ const getRowGreeting = row => {
     //   },
     // ];
 
+    // const filter = [
+    //   {
+    //     valueTransformer: {
+    //       encode: (floatValue) => {
+    //         const buffer = new ArrayBuffer(4);
+    //         const view = new DataView(buffer);
+    //         view.setFloat32(0, floatValue);
+    //         return Buffer.from(buffer);
+    //       },
+    //       decode: (bytes) => {
+    //         const buffer = new ArrayBuffer(4);
+    //         const view = new DataView(buffer);
+    //         for (let i = 0; i < 4; i++) {
+    //           view.setUint8(i, bytes[i]);
+    //         }
+    //         return view.getFloat32(0);
+    //       },
+    //     },
+    //   }
+    // ];
+
     console.log('Reading a single row by row key');
     const [singleRow] = await table.row(`${dataset[0]['device']}-${dataset[0]['ts']}`).get();
-    console.log(`\tRead: ${singleRow.data['lf-sensors'].light[0].value}`);
+    console.log(`\tRead: ${parseFloat(singleRow.data['lf-sensors'].co[0].value)}`);
 
     // console.log('Reading the entire table');
     // const [allRows] = await table.getRows({filter});
