@@ -79,9 +79,9 @@ const getRowGreeting = row => {
         'device': 'b8:27:eb:bf:9d:51', 
         'co': 0.004955938648391245,
         'humidity': 51.0,
-        'light': false,
+        'light': "false",
         'lpg': 0.00765082227055719,
-        'motion': false,
+        'motion': "false",
         'smoke': 0.02041127012241292,
         'temp': 22.7, 
       },
@@ -128,7 +128,7 @@ const getRowGreeting = row => {
 
     console.log('Reading a single row by row key');
     const [singleRow] = await table.row(`${dataset[0]['device']}-${dataset[0]['ts']}`).get();
-    console.log(`\tRead: ${singleRow.data['lf-sensors']['co']}`);
+    console.log(`\tRead: ${singleRow.data['lf-sensors'].light[0].value}`);
 
     // console.log('Reading the entire table');
     // const [allRows] = await table.getRows({filter});
