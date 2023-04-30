@@ -1,5 +1,6 @@
 // const {Bigtable} = require('@google-cloud/bigtable');
 
+const lib = require("./queries_s1");
 const fs = require("fs");
 const { parse } = require("csv-parse");
 require('dotenv').config();
@@ -60,13 +61,13 @@ const getRowGreeting = row => {
           {
             name: COLUMN_FAMILY_ID[0],
             rule: {
-              versions: 1,
+              versions: 5,
             },
           },
           {
             name: COLUMN_FAMILY_ID[1],
             rule: {
-              versions: 1,
+              versions: 5,
             },
           },
         ],
@@ -76,7 +77,7 @@ const getRowGreeting = row => {
 
     async function insertData(dataset){
       const rowsToInsert = dataset.map((data, index) => ({
-        key: `${data['device']}-${data['ts']}`,
+        key: `${data['device']}#${data['ts']}`,
         data: {
           [COLUMN_FAMILY_ID[0]]: {
             ['co']: {
@@ -131,20 +132,24 @@ const getRowGreeting = row => {
               values.map((value, index) => [keys[index], value])
           )
       );
-  
-      // console.log(dataset)
+
       console.log('Inserting Data');
-      insertData(dataset)
+      await insertData(dataset)
 
-      console.log('Reading a single row by row key');
-      const [singleRow] = await table.row(`${dataset[0]['device']}-${dataset[0]['ts']}`).get();
-      console.log(`\tRead: ${singleRow.data['lf-sensors'].light[0].value}`);
+      // Query 2
+      await lib.query_2(table, "humidity", "00:0f:00:70:91:0a", "1.5945120943859746E9", "1.5945121609924853E9")
 
+      // Query 3
+      await lib.query_3(table, "00:0f:00:70:91:0a", "humidity")
+      
       // console.log('Delete the table');
       // await table.delete();
+     
     }
 
     readData()
+
+    
 
     // const filter = [
     //   {
