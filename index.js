@@ -73,6 +73,7 @@ const getRowGreeting = row => {
     }
 
     console.log('Write some rows to the table');
+
     const dataset = [
       {
         'ts': '1.5945120943859746E9', 
@@ -85,7 +86,8 @@ const getRowGreeting = row => {
         'smoke': '0.02041127012241292',
         'temp': '22.7', 
       },
-    ];
+    ]
+
     const rowsToInsert = dataset.map((data, index) => ({
       key: `${data['device']}-${data['ts']}`,
       data: {
