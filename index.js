@@ -138,15 +138,13 @@ const getRowGreeting = row => {
 
       console.log('Reading a single row by row key');
       const [singleRow] = await table.row(`${dataset[0]['device']}-${dataset[0]['ts']}`).get();
-      console.log(`\tRead: ${parseFloat(singleRow.data['lf-sensors'].co[0].value)}`);
+      console.log(`\tRead: ${singleRow.data['lf-sensors'].light[0].value}`);
 
       // console.log('Delete the table');
       // await table.delete();
     }
 
     readData()
-
-    
 
     // const filter = [
     //   {
@@ -175,20 +173,13 @@ const getRowGreeting = row => {
     //       },
     //     },
     //   }
-    // ];
-
-    
+    // ];  
 
     // console.log('Reading the entire table');
     // const [allRows] = await table.getRows({filter});
     // for (const row of allRows) {
     //   console.log(`\tRead: ${getRowGreeting(row)}`);
     // }
-    
-
-    
-    
-
 
   } catch (error) {
     console.error('Something went wrong:', error);
