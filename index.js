@@ -74,79 +74,51 @@ const getRowGreeting = row => {
       await table.create(options);
     }
 
-    async function insertData(dataset){
-      const rowsToInsert = dataset.map((data, index) => ({
-        key: `${data['device']}-${data['ts']}`,
-        data: {
-          [COLUMN_FAMILY_ID[0]]: {
-            ['co']: {
-              value: data['co'],
-            },
-            ['light']: {
-              value: data['light'],
-            },
-            ['lpg']: {
-              value: data['lpg'],
-            },
-            ['motion']: {
-              value: data['motion'],
-            },
+    console.log('Write some rows to the table');
+    const dataset = [
+      {
+        'ts': '1.5945120943859746E9', 
+        'device': 'b8:27:eb:bf:9d:51', 
+        'co': '0.004955938648391245',
+        'humidity': '51.0',
+        'light': "false",
+        'lpg': '0.00765082227055719',
+        'motion': "false",
+        'smoke': '0.02041127012241292',
+        'temp': '22.7', 
+      },
+    ];
+    const rowsToInsert = dataset.map((data, index) => ({
+      key: `${data['device']}-${data['ts']}`,
+      data: {
+        [COLUMN_FAMILY_ID[0]]: {
+          ['co']: {
+            value: data['co'],
           },
-          [COLUMN_FAMILY_ID[1]]: {
-            ['humidity']: {
-              value: data['humidity'],
-            },
-            ['smoke']: {
-              value: data['smoke'],
-            },
-            ['temp']: {
-              value: data['temp'],
-            },
+          ['light']: {
+            value: data['light'],
+          },
+          ['lpg']: {
+            value: data['lpg'],
+          },
+          ['motion']: {
+            value: data['motion'],
           },
         },
-      }));
-      await table.insert(rowsToInsert);
-    }
-    
-    dataset = [];
-    function readData(){
-      fs.createReadStream("iot_telemetry_data.csv")
-        .pipe(parse({ delimiter: ",", from_line: 2, to_line: 200 }))
-        .on("data", function (row) {
-            dataset.push(row);
-        })
-        .on("end", function () {
-            getValues(dataset)
-        })
-        .on("error", function (error) {
-            console.log(error.message);
-        });
-    }
-
-    async function getValues(data){
-      const keys = ['ts', 'device', 'co', 'humidity', 'light', 'lpg', 'motion', 'smoke', 'temp'];
-  
-      const dataset = data.map(values =>
-          Object.fromEntries(
-              values.map((value, index) => [keys[index], value])
-          )
-      );
-  
-      // console.log(dataset)
-      console.log('Inserting Data');
-      insertData(dataset)
-
-      console.log('Reading a single row by row key');
-      const [singleRow] = await table.row(`${dataset[0]['device']}-${dataset[0]['ts']}`).get();
-      console.log(`\tRead: ${parseFloat(singleRow.data['lf-sensors'].co[0].value)}`);
-
-      // console.log('Delete the table');
-      // await table.delete();
-    }
-
-    readData()
-
-    
+        [COLUMN_FAMILY_ID[1]]: {
+          ['humidity']: {
+            value: data['humidity'],
+          },
+          ['smoke']: {
+            value: data['smoke'],
+          },
+          ['temp']: {
+            value: data['temp'],
+          },
+        },
+      },
+    }));
+    await table.insert(rowsToInsert);
 
     // const filter = [
     //   {
