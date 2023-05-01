@@ -6,9 +6,12 @@ const readline = require('readline').createInterface({
 });
 const task1 = require("./queries_s1");
 const task2 = require("./queries_s2");
+const task3 = require("./queries_s3");
+
 const fs = require("fs");
 const { parse } = require("csv-parse");
 require('dotenv').config();
+
 const Bigtable = require('@google-cloud/bigtable');
 
 const bigtableOptions = {
@@ -39,11 +42,28 @@ const bigtableOptions = {
  *  - motion: last N
  *  - smoke: latest (in timeframe t)
  *  - temp:  latest (in timeframe t)
+ * 
+ * 
+ * TASK 3:
+ * [job_title, salary_estimate, job_desc, rating, company_name, location, hq, size, ownership, industry]
+ * SCHEMA
+ * row key: job_title, location, industry, company_name
+ * column families: jd, cd, skls
+ * ['Job Title','Salary Estimate','Job Description','Rating','Company Name','Location','Headquarters','Size','Type of ownership','Industry','Sector','Revenue','min_salary','max_salary','avg_salary','job_state','same_state','company_age','python','excel','hadoop','spark','aws','tableau','big_data','job_simp','seniority']
+ * 
+ * Column [jd]: 
+ * 'Job Title','Salary Estimate','Job Description', 'min_salary','max_salary','avg_salary','job_state','same_state','job_simp','seniority', 
+ * 
+ * Column [cd]: 
+ * 'Rating','Company Name','Location','Headquarters','Size','Type of ownership','Industry','Sector','Revenue','company_age',
+ * 
+ * Column [skls]
+ *  'python','excel','hadoop','spark','aws','tableau','big_data'
  */
 
 
 TABLE_ID = 'SensorsTable1';
-const COLUMN_FAMILY_ID = ['lf-sensors', 'mf-sensors'];
+COLUMN_FAMILY_ID = ['lf-sensors', 'mf-sensors'];
 const COLUMN_QUALIFIERS_F1 = ['co', 'light', 'lpg', 'motion'];
 const COLUMN_QUALIFIERS_F2 = ['humidity', 'smoke', 'temp'];
 
@@ -145,7 +165,7 @@ const COLUMN_QUALIFIERS_F2 = ['humidity', 'smoke', 'temp'];
   
         // await task1.query_1(table, "temp", "1.5945120943859746E9", "1.5945123089071703E9")
   
-        await task1.query_2(table, "humidity", "00:0f:00:70:91:0a", "1.5945120943859746E9", "1.5945124248014004E9")
+        // await task1.query_2(table, "humidity", "00:0f:00:70:91:0a", "1.5945120943859746E9", "1.5945124248014004E9")
   
         // await task1.query_3(table, "00:0f:00:70:91:0a", "humidity")
   
@@ -275,7 +295,7 @@ const COLUMN_QUALIFIERS_F2 = ['humidity', 'smoke', 'temp'];
         await table.delete();
        
       }
-  
+
       readData()
   
     } catch (error) {
@@ -285,10 +305,8 @@ const COLUMN_QUALIFIERS_F2 = ['humidity', 'smoke', 'temp'];
 
   else if(task == 3){
 
-    // JobTitle#
-
-
-    TABLE_ID = "SensorsTable2";
+    TABLE_ID = "JobPostings";
+    COLUMN_FAMILY_ID = ['jd', 'cd', 'skls']
     try {
       const bigtableClient = new Bigtable(bigtableOptions);
       const instance = bigtableClient.instance(process.env.CBT_INSTANCE);
@@ -303,15 +321,19 @@ const COLUMN_QUALIFIERS_F2 = ['humidity', 'smoke', 'temp'];
             {
               name: COLUMN_FAMILY_ID[0],
               rule: {
-                versions: 5,
+                versions: 5
               },
             },
             {
               name: COLUMN_FAMILY_ID[1],
               rule: {
-                age: {
-                  hours: 5,
-                },
+                versions: 5
+              },
+            },
+            {
+              name: COLUMN_FAMILY_ID[2],
+              rule: {
+                versions: 5
               },
             },
           ],
@@ -321,38 +343,97 @@ const COLUMN_QUALIFIERS_F2 = ['humidity', 'smoke', 'temp'];
   
       async function insertData(dataset){
         const rowsToInsert = dataset.map((data, index) => ({
-          key: `${data['device']}`,
+          // job_title, location, Industry, Company Name
+          key: `${data['Job Title']}#${data['Location']}#${data['Industry']}#${data['Company Name']}`,
           data: {
             [COLUMN_FAMILY_ID[0]]: {
-              ['co']: {
-                timestamp: new Date(parseFloat(data['ts'])),
-                value: data['co'],
+              // 'Job Title','Salary Estimate','Job Description', 'min_salary','max_salary','avg_salary','job_state','same_state','job_simp','seniority',               
+              ['Job Title']: {
+                value: data['Job Title'],
               },
-              ['light']: {
-                timestamp: new Date(parseFloat(data['ts'])),
-                value: data['light'],
+              ['Salary Estimate']: {
+                value: data['Salary Estimate'],
               },
-              ['lpg']: {
-                timestamp: new Date(parseFloat(data['ts'])),
-                value: data['lpg'],
+              ['Job Description']: {
+                value: data['Job Description'],
               },
-              ['motion']: {
-                timestamp: new Date(parseFloat(data['ts'])),
-                value: data['motion'],
+              ['min_salary']: {
+                value: data['min_salary'],
+              },
+              ['max_salary']: {
+                value: data['max_salary'],
+              },
+              ['avg_salary']: {
+                value: data['avg_salary'],
+              },
+              ['job_state']: {
+                value: data['job_state'],
+              },
+              ['same_state']: {
+                value: data['same_state'],
+              },
+              ['job_simp']: {
+                value: data['job_simp'],
+              },
+              ['seniority']: {
+                value: data['seniority'],
               },
             },
             [COLUMN_FAMILY_ID[1]]: {
-              ['humidity']: {
-                timestamp: new Date(parseFloat(data['ts'])),
-                value: data['humidity'],
+              // 'Rating','Company Name','Location','Headquarters','Size','Type of ownership','Industry','Sector','Revenue','company_age',
+              ['Rating']: {
+                value: data['Rating'],
               },
-              ['smoke']: {
-                timestamp: new Date(parseFloat(data['ts'])),
-                value: data['smoke'],
+              ['Company Name']: {
+                value: data['Company Name'],
               },
-              ['temp']: {
-                timestamp: new Date(parseFloat(data['ts'])),
-                value: data['temp'],
+              ['Location']: {
+                value: data['Location'],
+              },
+              ['Headquarters']: {
+                value: data['Headquarters'],
+              },
+              ['Size']: {
+                value: data['Size'],
+              },
+              ['Type of ownership']: {
+                value: data['Type of ownership'],
+              },
+              ['Industry']: {
+                value: data['Industry'],
+              },
+              ['Sector']: {
+                value: data['Sector'],
+              },
+              ['Revenue']: {
+                value: data['Revenue'],
+              },
+              ['company_age']: {
+                value: data['company_age'],
+              },
+            },
+            [COLUMN_FAMILY_ID[2]]: {
+              // 'python','excel','hadoop','spark','aws','tableau','big_data'
+              ['python']: {
+                value: data['python'],
+              },
+              ['excel']: {
+                value: data['excel'],
+              },
+              ['hadoop']: {
+                value: data['hadoop'],
+              },
+              ['spark']: {
+                value: data['spark'],
+              },
+              ['aws']: {
+                value: data['aws'],
+              },
+              ['tableau']: {
+                value: data['tableau'],
+              },
+              ['big_data']: {
+                value: data['big_data'],
               },
             },
           },
@@ -362,8 +443,8 @@ const COLUMN_QUALIFIERS_F2 = ['humidity', 'smoke', 'temp'];
       
       dataset = [];
       function readData(){
-        fs.createReadStream("iot_telemetry_data.csv")
-          .pipe(parse({ delimiter: ",", from_line: 2, to_line: 200 }))
+        fs.createReadStream("Cleaned_DS_Jobs.csv")
+          .pipe(parse({ delimiter: ",", from_line: 2}))
           .on("data", function (row) {
               dataset.push(row);
           })
@@ -376,25 +457,29 @@ const COLUMN_QUALIFIERS_F2 = ['humidity', 'smoke', 'temp'];
       }
   
       async function getValues(data){
-        const keys = ['ts', 'device', 'co', 'humidity', 'light', 'lpg', 'motion', 'smoke', 'temp'];
+        const keys = ['Job Title','Salary Estimate','Job Description','Rating','Company Name','Location','Headquarters','Size','Type of ownership','Industry','Sector','Revenue','min_salary','max_salary','avg_salary','job_state','same_state','company_age','python','excel','hadoop','spark','aws','tableau','big_data','job_simp','seniority'];
     
         const dataset = data.map(values =>
-            Object.fromEntries(
-                values.map((value, index) => [keys[index], value])
-            )
+          Object.fromEntries(
+            values.map((value, index) => [keys[index], value])
+          )
         );
   
         console.log('Inserting Data');
         await insertData(dataset)
 
-        console.log(dataset.length)
+        console.log(dataset.length + " values inserted")
 
-        // await task2.query_1(table, "humidity", "00:0f:00:70:91:0a", "1.5945120943859746E9", "1.5945124248014004E9")
+        // await task3.query_1(table, "Data Scientist")
 
-        // await task2.query_2(table, "humidity", "00:0f:00:70:91:0a")
+        // await task3.query_2(table, "Data Scientist", "Philadelphia, PA")
 
-        // await task2.query_3(table, "humidity")
-        
+        // await task3.query_3(table)
+
+        // await task3.query_4(table, "Insurance Carriers")
+
+        await task3.query_5(table)
+
         console.log('Delete the table');
         await table.delete();
        
