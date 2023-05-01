@@ -1,6 +1,11 @@
 // const {Bigtable} = require('@google-cloud/bigtable');
-
-const lib = require("./queries_s1");
+const prompt = require('prompt-sync')();
+const readline = require('readline').createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
+const task1 = require("./queries_s1");
+const task2 = require("./queries_s2");
 const fs = require("fs");
 const { parse } = require("csv-parse");
 require('dotenv').config();
@@ -37,159 +42,368 @@ const bigtableOptions = {
  */
 
 
-const TABLE_ID = 'SensorsTable1';
+TABLE_ID = 'SensorsTable1';
 const COLUMN_FAMILY_ID = ['lf-sensors', 'mf-sensors'];
 const COLUMN_QUALIFIERS_F1 = ['co', 'light', 'lpg', 'motion'];
 const COLUMN_QUALIFIERS_F2 = ['humidity', 'smoke', 'temp'];
 
-const getRowGreeting = row => {
-  return row.data[COLUMN_FAMILY_ID][COLUMN_QUALIFIERS_F1][0].value;
-};
 
 (async () => {
-  try {
-    const bigtableClient = new Bigtable(bigtableOptions);
-    const instance = bigtableClient.instance(process.env.CBT_INSTANCE);
+  const task = prompt('Input task number: ');
+  console.log(`-> ${task}`);
 
-    const table = instance.table(TABLE_ID);
-    const [tableExists] = await table.exists();
-
-    if (!tableExists) {
-      console.log(`Creating table ${TABLE_ID}`);
-      const options = {
-        families: [
-          {
-            name: COLUMN_FAMILY_ID[0],
-            rule: {
-              versions: 5,
-            },
-          },
-          {
-            name: COLUMN_FAMILY_ID[1],
-            rule: {
-              versions: 5,
-            },
-          },
-        ],
-      };
-      await table.create(options);
-    }
-
-    async function insertData(dataset){
-      const rowsToInsert = dataset.map((data, index) => ({
-        key: `${data['device']}#${data['ts']}`,
-        data: {
-          [COLUMN_FAMILY_ID[0]]: {
-            ['co']: {
-              value: data['co'],
-            },
-            ['light']: {
-              value: data['light'],
-            },
-            ['lpg']: {
-              value: data['lpg'],
-            },
-            ['motion']: {
-              value: data['motion'],
-            },
-          },
-          [COLUMN_FAMILY_ID[1]]: {
-            ['humidity']: {
-              value: data['humidity'],
-            },
-            ['smoke']: {
-              value: data['smoke'],
-            },
-            ['temp']: {
-              value: data['temp'],
-            },
-          },
-        },
-      }));
-      await table.insert(rowsToInsert);
-    }
-    
-    dataset = [];
-    function readData(){
-      fs.createReadStream("iot_telemetry_data.csv")
-        .pipe(parse({ delimiter: ",", from_line: 2, to_line: 200 }))
-        .on("data", function (row) {
-            dataset.push(row);
-        })
-        .on("end", function () {
-            getValues(dataset)
-        })
-        .on("error", function (error) {
-            console.log(error.message);
-        });
-    }
-
-    async function getValues(data){
-      const keys = ['ts', 'device', 'co', 'humidity', 'light', 'lpg', 'motion', 'smoke', 'temp'];
+  if(task == 1){
+    console.log("Task 1")
+    try {
+      const bigtableClient = new Bigtable(bigtableOptions);
+      const instance = bigtableClient.instance(process.env.CBT_INSTANCE);
   
-      const dataset = data.map(values =>
-          Object.fromEntries(
-              values.map((value, index) => [keys[index], value])
-          )
-      );
-
-      console.log('Inserting Data');
-      await insertData(dataset)
-
-      await lib.query_1(table, "humidity", "1.5945120943859746E9", "1.5945121082753816E9")
-
-      // await lib.query_2(table, "humidity", "00:0f:00:70:91:0a", "1.5945120943859746E9", "1.5945121609924853E9")
-
-      // await lib.query_3(table, "00:0f:00:70:91:0a", "humidity")
-
-      // await lib.query_4(table, "humidity")
+      const table = instance.table(TABLE_ID);
+      const [tableExists] = await table.exists();
+  
+      if (!tableExists) {
+        console.log(`Creating table ${TABLE_ID}`);
+        const options = {
+          families: [
+            {
+              name: COLUMN_FAMILY_ID[0],
+              rule: {
+                versions: 5,
+              },
+            },
+            {
+              name: COLUMN_FAMILY_ID[1],
+              rule: {
+                versions: 5,
+              },
+            },
+          ],
+        };
+        await table.create(options);
+      }
+  
+      async function insertData(dataset){
+        const rowsToInsert = dataset.map((data, index) => ({
+          key: `${data['device']}#${data['ts']}`,
+          data: {
+            [COLUMN_FAMILY_ID[0]]: {
+              ['co']: {
+                value: data['co'],
+              },
+              ['light']: {
+                value: data['light'],
+              },
+              ['lpg']: {
+                value: data['lpg'],
+              },
+              ['motion']: {
+                value: data['motion'],
+              },
+            },
+            [COLUMN_FAMILY_ID[1]]: {
+              ['humidity']: {
+                value: data['humidity'],
+              },
+              ['smoke']: {
+                value: data['smoke'],
+              },
+              ['temp']: {
+                value: data['temp'],
+              },
+            },
+          },
+        }));
+        await table.insert(rowsToInsert);
+      }
       
-      // console.log('Delete the table');
-      // await table.delete();
-     
-    }
-
-    readData()
-
-    
-
-    // const filter = [
-    //   {
-    //     column: {
-    //       cellLimit: 1, // Only retrieve the most recent version of the cell.
-    //     },
-    //   },
-    // ];
-
-    // const filter = [
-    //   {
-    //     valueTransformer: {
-    //       encode: (floatValue) => {
-    //         const buffer = new ArrayBuffer(4);
-    //         const view = new DataView(buffer);
-    //         view.setFloat32(0, floatValue);
-    //         return Buffer.from(buffer);
-    //       },
-    //       decode: (bytes) => {
-    //         const buffer = new ArrayBuffer(4);
-    //         const view = new DataView(buffer);
-    //         for (let i = 0; i < 4; i++) {
-    //           view.setUint8(i, bytes[i]);
-    //         }
-    //         return view.getFloat32(0);
-    //       },
-    //     },
-    //   }
-    // ];  
-
-    // console.log('Reading the entire table');
-    // const [allRows] = await table.getRows({filter});
-    // for (const row of allRows) {
-    //   console.log(`\tRead: ${getRowGreeting(row)}`);
-    // }
-
-  } catch (error) {
-    console.error('Something went wrong:', error);
-  }
+      dataset = [];
+      function readData(){
+        fs.createReadStream("iot_telemetry_data.csv")
+          .pipe(parse({ delimiter: ",", from_line: 2, to_line: 200 }))
+          .on("data", function (row) {
+              dataset.push(row);
+          })
+          .on("end", function () {
+              getValues(dataset)
+          })
+          .on("error", function (error) {
+              console.log(error.message);
+          });
+      }
   
+      async function getValues(data){
+        const keys = ['ts', 'device', 'co', 'humidity', 'light', 'lpg', 'motion', 'smoke', 'temp'];
+    
+        const dataset = data.map(values =>
+            Object.fromEntries(
+                values.map((value, index) => [keys[index], value])
+            )
+        );
+  
+        console.log('Inserting Data');
+        await insertData(dataset)
+  
+        // await task1.query_1(table, "temp", "1.5945120943859746E9", "1.5945123089071703E9")
+  
+        await task1.query_2(table, "humidity", "00:0f:00:70:91:0a", "1.5945120943859746E9", "1.5945124248014004E9")
+  
+        // await task1.query_3(table, "00:0f:00:70:91:0a", "humidity")
+  
+        // await task1.query_4(table, "humidity")
+        
+        // console.log('Delete the table');
+        // await table.delete();
+       
+      }
+  
+      readData()
+  
+    } catch (error) {
+      console.error('Something went wrong:', error);
+    }
+  }
+
+  else if(task == 2){
+    TABLE_ID = "SensorsTable2";
+    try {
+      const bigtableClient = new Bigtable(bigtableOptions);
+      const instance = bigtableClient.instance(process.env.CBT_INSTANCE);
+  
+      const table = instance.table(TABLE_ID);
+      const [tableExists] = await table.exists();
+  
+      if (!tableExists) {
+        console.log(`Creating table ${TABLE_ID}`);
+        const options = {
+          families: [
+            {
+              name: COLUMN_FAMILY_ID[0],
+              rule: {
+                versions: 5,
+              },
+            },
+            {
+              name: COLUMN_FAMILY_ID[1],
+              rule: {
+                age: {
+                  hours: 5,
+                },
+              },
+            },
+          ],
+        };
+        await table.create(options);
+      }
+  
+      async function insertData(dataset){
+        const rowsToInsert = dataset.map((data, index) => ({
+          key: `${data['device']}`,
+          data: {
+            [COLUMN_FAMILY_ID[0]]: {
+              ['co']: {
+                timestamp: new Date(parseFloat(data['ts'])),
+                value: data['co'],
+              },
+              ['light']: {
+                timestamp: new Date(parseFloat(data['ts'])),
+                value: data['light'],
+              },
+              ['lpg']: {
+                timestamp: new Date(parseFloat(data['ts'])),
+                value: data['lpg'],
+              },
+              ['motion']: {
+                timestamp: new Date(parseFloat(data['ts'])),
+                value: data['motion'],
+              },
+            },
+            [COLUMN_FAMILY_ID[1]]: {
+              ['humidity']: {
+                timestamp: new Date(parseFloat(data['ts'])),
+                value: data['humidity'],
+              },
+              ['smoke']: {
+                timestamp: new Date(parseFloat(data['ts'])),
+                value: data['smoke'],
+              },
+              ['temp']: {
+                timestamp: new Date(parseFloat(data['ts'])),
+                value: data['temp'],
+              },
+            },
+          },
+        }));
+        await table.insert(rowsToInsert);
+      }
+      
+      dataset = [];
+      function readData(){
+        fs.createReadStream("iot_telemetry_data.csv")
+          .pipe(parse({ delimiter: ",", from_line: 2, to_line: 200 }))
+          .on("data", function (row) {
+              dataset.push(row);
+          })
+          .on("end", function () {
+              getValues(dataset)
+          })
+          .on("error", function (error) {
+              console.log(error.message);
+          });
+      }
+  
+      async function getValues(data){
+        const keys = ['ts', 'device', 'co', 'humidity', 'light', 'lpg', 'motion', 'smoke', 'temp'];
+    
+        const dataset = data.map(values =>
+            Object.fromEntries(
+                values.map((value, index) => [keys[index], value])
+            )
+        );
+  
+        console.log('Inserting Data');
+        await insertData(dataset)
+
+        console.log(dataset.length)
+
+        // await task2.query_1(table, "humidity", "00:0f:00:70:91:0a", "1.5945120943859746E9", "1.5945124248014004E9")
+
+        // await task2.query_2(table, "humidity", "00:0f:00:70:91:0a")
+
+        // await task2.query_3(table, "humidity")
+        
+        console.log('Delete the table');
+        await table.delete();
+       
+      }
+  
+      readData()
+  
+    } catch (error) {
+      console.error('Something went wrong:', error);
+    }
+  }
+
+  else if(task == 3){
+
+    // JobTitle#
+
+
+    TABLE_ID = "SensorsTable2";
+    try {
+      const bigtableClient = new Bigtable(bigtableOptions);
+      const instance = bigtableClient.instance(process.env.CBT_INSTANCE);
+  
+      const table = instance.table(TABLE_ID);
+      const [tableExists] = await table.exists();
+  
+      if (!tableExists) {
+        console.log(`Creating table ${TABLE_ID}`);
+        const options = {
+          families: [
+            {
+              name: COLUMN_FAMILY_ID[0],
+              rule: {
+                versions: 5,
+              },
+            },
+            {
+              name: COLUMN_FAMILY_ID[1],
+              rule: {
+                age: {
+                  hours: 5,
+                },
+              },
+            },
+          ],
+        };
+        await table.create(options);
+      }
+  
+      async function insertData(dataset){
+        const rowsToInsert = dataset.map((data, index) => ({
+          key: `${data['device']}`,
+          data: {
+            [COLUMN_FAMILY_ID[0]]: {
+              ['co']: {
+                timestamp: new Date(parseFloat(data['ts'])),
+                value: data['co'],
+              },
+              ['light']: {
+                timestamp: new Date(parseFloat(data['ts'])),
+                value: data['light'],
+              },
+              ['lpg']: {
+                timestamp: new Date(parseFloat(data['ts'])),
+                value: data['lpg'],
+              },
+              ['motion']: {
+                timestamp: new Date(parseFloat(data['ts'])),
+                value: data['motion'],
+              },
+            },
+            [COLUMN_FAMILY_ID[1]]: {
+              ['humidity']: {
+                timestamp: new Date(parseFloat(data['ts'])),
+                value: data['humidity'],
+              },
+              ['smoke']: {
+                timestamp: new Date(parseFloat(data['ts'])),
+                value: data['smoke'],
+              },
+              ['temp']: {
+                timestamp: new Date(parseFloat(data['ts'])),
+                value: data['temp'],
+              },
+            },
+          },
+        }));
+        await table.insert(rowsToInsert);
+      }
+      
+      dataset = [];
+      function readData(){
+        fs.createReadStream("iot_telemetry_data.csv")
+          .pipe(parse({ delimiter: ",", from_line: 2, to_line: 200 }))
+          .on("data", function (row) {
+              dataset.push(row);
+          })
+          .on("end", function () {
+              getValues(dataset)
+          })
+          .on("error", function (error) {
+              console.log(error.message);
+          });
+      }
+  
+      async function getValues(data){
+        const keys = ['ts', 'device', 'co', 'humidity', 'light', 'lpg', 'motion', 'smoke', 'temp'];
+    
+        const dataset = data.map(values =>
+            Object.fromEntries(
+                values.map((value, index) => [keys[index], value])
+            )
+        );
+  
+        console.log('Inserting Data');
+        await insertData(dataset)
+
+        console.log(dataset.length)
+
+        // await task2.query_1(table, "humidity", "00:0f:00:70:91:0a", "1.5945120943859746E9", "1.5945124248014004E9")
+
+        // await task2.query_2(table, "humidity", "00:0f:00:70:91:0a")
+
+        // await task2.query_3(table, "humidity")
+        
+        console.log('Delete the table');
+        await table.delete();
+       
+      }
+  
+      readData()
+  
+    } catch (error) {
+      console.error('Something went wrong:', error);
+    }
+  }
 })();
