@@ -16,7 +16,6 @@ async function query_1(table, sensor, device, time_start, time_end){
     };
     
     const [rows] = await table.getRows(options);
-    console.log(rows.length)
     sensorValue = []
     for (const row of rows) {
         sum = 0;
@@ -26,8 +25,9 @@ async function query_1(table, sensor, device, time_start, time_end){
         }
         avg = sum/(row.data['mf-sensors'][sensor].length)
 
-        console.log(`${row.id} - Average of ${sensor} sensor: ${avg}`)        
+        console.log(`--> ${row.id} - Average of ${sensor} sensor: ${avg}`)        
     }
+
 
   }
 
@@ -40,7 +40,6 @@ async function query_1(table, sensor, device, time_start, time_end){
     };
         
     const [rows] = await table.getRows(options);
-    console.log(rows.length)
     sensorValue = []
     for (const row of rows) {
         sum = 0;
@@ -54,12 +53,11 @@ async function query_1(table, sensor, device, time_start, time_end){
 
   async function query_3(table, sensor) {
 
-    console.log(`Device with the higher average readings of a ${sensor} sensor`)
+    console.log(`\nQuery 3: Which device has the lowest standard deviation for ${sensor} sensor`)
     
     // query the table for all rows
     const [allRows] = await table.getRows();
     
-    // iterate through each row and update the stats for each device
     deviation = {}
     for (const row of allRows) {
       const deviceStats = [];
@@ -67,11 +65,10 @@ async function query_1(table, sensor, device, time_start, time_end){
         deviceStats.push(parseFloat(row.data['mf-sensors'][sensor][i].value))
       }
       deviation[row.id] = dev(deviceStats)
-      // update the stats for this device
     }
     console.log(deviation)
-    let key = Object.keys(deviation).reduce((key, v) => deviation[v] < deviation[key] ? v : key);
-    console.log(key)
+    let device_key = Object.keys(deviation).reduce((key, v) => deviation[v] < deviation[key] ? v : key);
+    console.log(` --> ${device_key} device has the lowest standard deviation`)
   }
 
   function dev(arr){

@@ -139,7 +139,7 @@ const COLUMN_QUALIFIERS_F2 = ['humidity', 'smoke', 'temp'];
       dataset = [];
       function readData(){
         fs.createReadStream("iot_telemetry_data.csv")
-          .pipe(parse({ delimiter: ",", from_line: 2, to_line: 200 }))
+          .pipe(parse({ delimiter: ",", from_line: 2, to_line: 1000 }))
           .on("data", function (row) {
               dataset.push(row);
           })
@@ -163,16 +163,16 @@ const COLUMN_QUALIFIERS_F2 = ['humidity', 'smoke', 'temp'];
         console.log('Inserting Data');
         await insertData(dataset)
   
-        // await task1.query_1(table, "temp", "1.5945120943859746E9", "1.5945123089071703E9")
+        await task1.query_1(table, "temp", "1.5945122262972412E9", "1.5945137578910081E9")
   
-        // await task1.query_2(table, "humidity", "00:0f:00:70:91:0a", "1.5945120943859746E9", "1.5945124248014004E9")
+        await task1.query_2(table, "humidity", "00:0f:00:70:91:0a", "1.5945122262972412E9", "1.5945137578910081E9")
   
-        // await task1.query_3(table, "00:0f:00:70:91:0a", "humidity")
+        await task1.query_3(table, "00:0f:00:70:91:0a", "humidity")
   
-        // await task1.query_4(table, "humidity")
+        await task1.query_4(table, "temp")
         
-        // console.log('Delete the table');
-        // await table.delete();
+        console.log('Delete the table');
+        await table.delete();
        
       }
   
@@ -259,7 +259,7 @@ const COLUMN_QUALIFIERS_F2 = ['humidity', 'smoke', 'temp'];
       dataset = [];
       function readData(){
         fs.createReadStream("iot_telemetry_data.csv")
-          .pipe(parse({ delimiter: ",", from_line: 2, to_line: 200 }))
+          .pipe(parse({ delimiter: ",", from_line: 2, to_line: 1000 }))
           .on("data", function (row) {
               dataset.push(row);
           })
@@ -285,11 +285,11 @@ const COLUMN_QUALIFIERS_F2 = ['humidity', 'smoke', 'temp'];
 
         console.log(dataset.length)
 
-        // await task2.query_1(table, "humidity", "00:0f:00:70:91:0a", "1.5945120943859746E9", "1.5945124248014004E9")
+        await task2.query_1(table, "humidity", "00:0f:00:70:91:0a", "1.5945120943859746E9", "1.5945124248014004E9")
 
-        // await task2.query_2(table, "humidity", "00:0f:00:70:91:0a")
+        await task2.query_2(table, "humidity", "00:0f:00:70:91:0a")
 
-        // await task2.query_3(table, "humidity")
+        await task2.query_3(table, "humidity")
         
         console.log('Delete the table');
         await table.delete();
@@ -468,19 +468,19 @@ const COLUMN_QUALIFIERS_F2 = ['humidity', 'smoke', 'temp'];
         console.log('Inserting Data');
         await insertData(dataset)
 
-        console.log(dataset.length + " values inserted")
+        await task3.query_1(table, "Data Scientist")
 
-        // await task3.query_1(table, "Data Scientist")
+        await task3.query_2(table, "Data Scientist", "Philadelphia, PA")
 
-        // await task3.query_2(table, "Data Scientist", "Philadelphia, PA")
+        await task3.query_3(table)
 
-        // await task3.query_3(table)
-
-        // await task3.query_4(table, "Insurance Carriers")
+        await task3.query_4(table, "Insurance Carriers")
 
         await task3.query_5(table)
 
-        console.log('Delete the table');
+        await task3.query_6(table)
+
+        console.log('\nDelete the table');
         await table.delete();
        
       }
