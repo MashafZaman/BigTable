@@ -136,11 +136,13 @@ const getRowGreeting = row => {
       console.log('Inserting Data');
       await insertData(dataset)
 
-      // Query 2
-      await lib.query_2(table, "humidity", "00:0f:00:70:91:0a", "1.5945120943859746E9", "1.5945121609924853E9")
+      await lib.query_1(table, "humidity", "1.5945120943859746E9", "1.5945121082753816E9")
 
-      // Query 3
-      await lib.query_3(table, "00:0f:00:70:91:0a", "humidity")
+      // await lib.query_2(table, "humidity", "00:0f:00:70:91:0a", "1.5945120943859746E9", "1.5945121609924853E9")
+
+      // await lib.query_3(table, "00:0f:00:70:91:0a", "humidity")
+
+      // await lib.query_4(table, "humidity")
       
       // console.log('Delete the table');
       // await table.delete();
